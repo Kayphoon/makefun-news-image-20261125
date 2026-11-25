@@ -17,5 +17,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
 const image = readFileSync(join(here, "entry.png"));
 
+// The gate only accepts a whole PNG of at most 1 MiB, so fail loudly here
+// rather than hand the grader a truncated or swapped file.
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+if (image.length > 1024 * 1024 || !image.subarray(0, 8).equals(PNG_SIGNATURE)) {
+  throw new Error(`entry.png is not a whole PNG of at most 1 MiB (${image.length} bytes)`);
+}
+
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, "entry.png"), image);
+const target = join(outDir, "entry.png");
+writeFileSync(target, image);
+console.error(`wrote ${target}: ${image.length} bytes, unchanged from entry.png`);
